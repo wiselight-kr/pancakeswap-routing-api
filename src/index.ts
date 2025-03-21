@@ -4,12 +4,17 @@ import { V4Router } from '@pancakeswap/smart-router'
 import { createPublicClient, http, isAddress } from 'viem'
 import { bsc } from 'viem/chains'
 import { abi } from './erc20'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const BSC_RPC_URL = process.env.BSC_RPC_URL || 'https://bsc-dataseed1.binance.org'
 
 const erc20Cache = new Map<string, ERC20Token>()
 
 const client = createPublicClient({
     chain: bsc,
-    transport: http('https://bsc-dataseed1.binance.org'),
+    transport: http(BSC_RPC_URL),
     batch: {
         multicall: {
             batchSize: 1024 * 200,

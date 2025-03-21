@@ -6,6 +6,7 @@
     "@pancakeswap/sdk": "^5.8.0",
     "@pancakeswap/smart-router": "^5.0.0",
     "@pancakeswap/tokens": "^0.6.7",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "graphql-request": "^5.0.0",
     "typescript": "^5.1.6",
