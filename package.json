@@ -30,7 +30,7 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "start": "craco start",
+    "start": "tsc && node dist",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
