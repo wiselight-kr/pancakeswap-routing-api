@@ -1,9 +1,11 @@
 import * as express from 'express'
-import {CurrencyAmount, TradeType, Currency, ERC20Token} from '@pancakeswap/sdk'
+import {CurrencyAmount, TradeType, ERC20Token} from '@pancakeswap/sdk'
 import { V4Router } from '@pancakeswap/smart-router'
 import { createPublicClient, http, isAddress } from 'viem'
 import { bsc } from 'viem/chains'
 import { abi } from './erc20'
+
+const erc20Cache = new Map<string, ERC20Token>()
 
 const client = createPublicClient({
     chain: bsc,
@@ -30,6 +32,14 @@ async function getERC20(chainId: number, tokenContractAddress: string): Promise<
     if (!isAddress(tokenContractAddress)) {
         return null
     }
+
+    const cacheKey = `${chainId}:${tokenContractAddress.toLowerCase()}`
+
+    // If it's in the cache, return it
+    if (erc20Cache.has(cacheKey)) {
+        return erc20Cache.get(cacheKey) || null
+    }
+
     const [decimals, name, symbol] = await Promise.all([
         client.readContract({
             address: tokenContractAddress,
@@ -48,13 +58,17 @@ async function getERC20(chainId: number, tokenContractAddress: string): Promise<
         }),
     ])
 
-    return new ERC20Token(
+    const token = new ERC20Token(
         Number(chainId),
         tokenContractAddress,
         Number(decimals),
         String(symbol),
         String(name),
     )
+
+    // Save the result in the cache before returning it
+    erc20Cache.set(cacheKey, token)
+    return token
 }
 app.get(
     '/quote',
