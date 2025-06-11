@@ -1,10 +1,11 @@
 import * as express from 'express'
 import {CurrencyAmount, TradeType, ERC20Token} from '@pancakeswap/sdk'
-import { V4Router } from '@pancakeswap/smart-router'
+import { SmartRouter } from '@pancakeswap/smart-router'
 import { createPublicClient, http, isAddress } from 'viem'
 import { bsc } from 'viem/chains'
 import { abi } from './erc20'
 import dotenv from 'dotenv'
+import {GraphQLClient} from "graphql-request";
 
 dotenv.config()
 
@@ -21,6 +22,11 @@ const client = createPublicClient({
         },
     },
 })
+
+const v3SubgraphClient = new GraphQLClient('https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v3-bsc')
+const v2SubgraphClient = new GraphQLClient('https://proxy-worker-api.pancakeswap.com/bsc-exchange')
+
+const quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => client })
 
 const app = express.default();
 
@@ -116,23 +122,34 @@ app.get(
             const amount = CurrencyAmount.fromRawAmount(currencyIn, BigInt(amountRaw.toString()))
 
             // Gather candidate pools (example: v3 pools)
-            const v3Pools = await V4Router.getV3CandidatePools({
-                clientProvider: () => client,
-                currencyA: currencyIn,
-                currencyB: currencyOut,
-            })
-            const pools = [...v3Pools]
+            const [v2Pools, v3Pools] = await Promise.all([
+                SmartRouter.getV2CandidatePools({
+                    onChainProvider: () => client,
+                    v2SubgraphProvider: () => v2SubgraphClient,
+                    v3SubgraphProvider: () => v3SubgraphClient,
+                    currencyA: currencyIn,
+                    currencyB: currencyOut,
+                }),
+                SmartRouter.getV3CandidatePools({
+                    onChainProvider: () => client,
+                    subgraphProvider: () => v3SubgraphClient,
+                    currencyA: currencyIn,
+                    currencyB: currencyOut,
+                    subgraphFallback: false,
+                }),
+            ])
+
+            const pools = [...v2Pools, ...v3Pools]
 
             // Attempt to find best trade
-            const swapRoute = await V4Router.getBestTrade(
-                amount,
-                currencyOut,
-                TradeType.EXACT_INPUT,
-                {
-                    gasPriceWei: () => client.getGasPrice(),
-                    candidatePools: pools,
-                }
-            )
+            const swapRoute = await SmartRouter.getBestTrade(amount, currencyOut, TradeType.EXACT_INPUT, {
+                gasPriceWei: () => client.getGasPrice(),
+                maxHops: 2,
+                maxSplits: 2,
+                poolProvider: SmartRouter.createStaticPoolProvider(pools),
+                quoteProvider,
+                quoterOptimization: true,
+            })
 
             if (!swapRoute) {
                 // No route found for the swap
