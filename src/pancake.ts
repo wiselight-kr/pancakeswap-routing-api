@@ -110,6 +110,16 @@ export async function quoteExactIn(
     tokenOut: Token,
     amountRaw: bigint
 ) {
+    const cacheKey = `gas_price:${CHAIN_ID}`;
+    const cached = await redisService.get(cacheKey);
+    let gasPrice
+    if (cached) {
+        gasPrice = BigInt(cached)
+    } else {
+        gasPrice = await rpc.getGasPrice()
+        await redisService.set(cacheKey, String(gasPrice), 3)
+    }
+
     const amountIn = CurrencyAmount.fromRawAmount(tokenIn, amountRaw);
     const candidatePools = await getCandidatePools(tokenIn, tokenOut);
     const pools = candidatePools.map((pool) => parsePool(CHAIN_ID, pool as any))
@@ -119,7 +129,7 @@ export async function quoteExactIn(
         tokenOut,
         TradeType.EXACT_INPUT,
         {
-            gasPriceWei: () => rpc.getGasPrice(),
+            gasPriceWei: BigInt(gasPrice),
             poolProvider: SmartRouter.createStaticPoolProvider(pools),
             quoteProvider,
             maxHops: 2,
