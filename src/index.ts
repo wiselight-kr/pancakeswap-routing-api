@@ -47,14 +47,15 @@ app.get('/quote', async (req, res) => {
         const out = trade.outputAmount;
 
         res.json({
-            amount: out.quotient.toString(),
-            amountDecimals: out.toExact(),
+            quote: out.quotient.toString(),
+            quoteDecimals: out.toExact(),
             tokenOutDecimals: out.currency.decimals,
             tokenOutSymbol: out.currency.symbol,
             route: trade.routes.map((p: any) => ({
                 address: p.address,
                 type: p.type
-            }))
+            })),
+            type
         });
     } catch (e: any) {
         console.error(e);
