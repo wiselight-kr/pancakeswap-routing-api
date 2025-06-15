@@ -15,7 +15,7 @@ import {checksumAddress} from "./utils/checksumAddress";
 export const CHAIN_ID = 56;              // BNB Smart Chain
 
 const TOKEN_CACHE_SEC = 60 * 60 * 12;   // 12 h
-const POOL_CACHE_SEC  = 15 * 60;             // 15 min
+const POOL_CACHE_SEC  = 30 * 60;             // 30 min
 
 /* ---------- 1. 온‑체인 / 서브그래프 프로바이더 ---------- */
 export const rpc: PublicClient = createPublicClient({
