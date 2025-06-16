@@ -1,7 +1,8 @@
 import express from 'express'
-import { CHAIN_ID, quoteExactIn, resolveCurrency } from './pancake';
+import { CHAIN_ID, quoteExactIn } from './pancake';
 import {Token} from "@pancakeswap/sdk";
 import {redisService} from "./services/redis.service";
+import {getToken} from "./utils/edgeQueries.util";
 
 redisService.connect();
 
@@ -33,8 +34,8 @@ app.get('/quote', async (req, res) => {
 
         /* -------- 토큰 객체화 -------- */
         const [tokenIn, tokenOut] = await Promise.all([
-            resolveCurrency(tokenInAddress),
-            resolveCurrency(tokenOutAddress)
+            getToken(tokenInAddress as `0x${string}`, CHAIN_ID),
+            getToken(tokenOutAddress as `0x${string}`, CHAIN_ID)
         ]);
 
         const trade = await quoteExactIn(tokenIn as Token, tokenOut as Token, BigInt(amount));
