@@ -26,7 +26,7 @@ export const viemServerClients = [bsc.id].reduce((prev, cur) => {
         ...prev,
         [bsc.id]: createPublicClient({
             chain: bsc,
-            transport: http(),
+            transport: http(process.env.BSC_RPC_URL ?? 'https://bsc-dataseed1.binance.org'),
             batch: {
                 multicall: {
                     batchSize: 1024 * 200,
