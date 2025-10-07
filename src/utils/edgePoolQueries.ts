@@ -90,9 +90,7 @@ const fetchV2Pools = async (addressA: Address, addressB: Address, chainId: Chain
     currencyA,
     currencyB,
     onChainProvider: getProvider(),
-    v3SubgraphProvider: () => v3Clients,
-    v2SubgraphProvider: () => v2Clients,
-    fallbackTimeout: 5_000,
+    v3SubgraphProvider: () => v3Clients
   })
   return pools
 }
